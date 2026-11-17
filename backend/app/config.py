@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Google Gemini AI
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
 
     # Cloudinary file storage
     CLOUDINARY_URL: str = "cloudinary://mock:mock@mock"

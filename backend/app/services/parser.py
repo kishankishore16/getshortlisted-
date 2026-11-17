@@ -135,33 +135,42 @@ RESUME TEXT:
 {text}
 """
 
-    try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.1,
-            ),
-        )
+    for attempt in range(3):
+        try:
+            # Fallback list of models in case of tier quotas
+            models_to_try = [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash"]
+            chosen_model = models_to_try[attempt % len(models_to_try)]
+            model = genai.GenerativeModel(chosen_model)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                ),
+            )
 
-        response_text = response.text.strip()
+            response_text = response.text.strip()
 
-        # Clean up potential markdown code blocks
-        if response_text.startswith("```"):
-            lines = response_text.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
-            response_text = "\n".join(lines)
+            # Clean up potential markdown code blocks
+            if response_text.startswith("```"):
+                lines = response_text.split("\n")
+                lines = [l for l in lines if not l.strip().startswith("```")]
+                response_text = "\n".join(lines)
 
-        parsed_data: dict = json.loads(response_text)
-        return parsed_data
+            parsed_data: dict = json.loads(response_text)
+            return parsed_data
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Gemini returned invalid JSON for resume parsing: {e}")
-        raise RuntimeError(f"Failed to parse Gemini response as JSON: {str(e)}")
-    except Exception as e:
-        logger.error(f"Gemini resume parsing failed: {e}")
-        raise RuntimeError(f"Resume parsing with Gemini failed: {str(e)}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Gemini returned invalid JSON for resume parsing: {e}")
+            raise RuntimeError(f"Failed to parse Gemini response as JSON: {str(e)}")
+        except Exception as e:
+            logger.warning(f"Gemini resume parsing attempt {attempt + 1} failed: {e}")
+            if "429" in str(e) and attempt < 2:
+                import asyncio
+                await asyncio.sleep(2)
+                continue
+            if attempt == 2:
+                raise RuntimeError(f"Resume parsing with Gemini failed: {str(e)}")
 
 
 async def parse_resume(file_bytes: bytes) -> ParsedResume:
