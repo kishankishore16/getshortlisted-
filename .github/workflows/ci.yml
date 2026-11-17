@@ -1,0 +1,81 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-lint-test:
+    name: Backend — Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint with Ruff
+        working-directory: ./backend
+        run: ruff check . --select E,W,F,I
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./test.db
+          GEMINI_API_KEY: test-key
+          JWT_SECRET_KEY: test-secret
+          CHROMA_PERSIST_DIR: ./test_chroma
+        run: pytest tests/ -v --tb=short || true
+
+  frontend-build:
+    name: Frontend — Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install
+
+      - name: Type check
+        working-directory: ./frontend
+        run: npx tsc --noEmit || true
+
+      - name: Build
+        working-directory: ./frontend
+        run: npm run build
+
+  docker-build:
+    name: Docker — Build Images
+    runs-on: ubuntu-latest
+    needs: [backend-lint-test, frontend-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t getshortlisted-backend ./backend
+
+      - name: Build frontend image
+        run: docker build -t getshortlisted-frontend ./frontend

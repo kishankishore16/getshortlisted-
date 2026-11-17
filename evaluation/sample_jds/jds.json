@@ -1,0 +1,79 @@
+[
+  {
+    "id": "jd_1_backend_fastapi",
+    "title": "Backend Software Engineer",
+    "company": "ScaleUp Payments",
+    "raw_text": "We are looking for a Backend Engineer with strong Python and API development skills. You will design, build, and maintain high-performance asynchronous REST microservices. Required skills: Python, FastAPI or Django, PostgreSQL, Docker, Git. Preferred skills: Redis caching, AWS, Kubernetes, Celery. Qualifications: B.Tech in Computer Science or related degree. Responsibilities include building scalable services, database design, and integrating external payment gateways.",
+    "parsed": {
+      "title": "Backend Software Engineer",
+      "company": "ScaleUp Payments",
+      "required_skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git"],
+      "preferred_skills": ["Redis", "AWS", "Kubernetes", "Celery"],
+      "qualifications": ["B.Tech in Computer Science or related degree"],
+      "responsibilities": [
+        "Design, build, and maintain high-performance asynchronous REST microservices",
+        "Optimize PostgreSQL queries and database schemas",
+        "Implement robust caching and distributed task queues",
+        "Deploy containerized microservices to cloud infrastructure"
+      ]
+    },
+    "human_ground_truth_ranking": [
+      "candidate_1_fullstack",
+      "candidate_4_cloud_devops",
+      "candidate_5_fresher",
+      "candidate_3_frontend_dev",
+      "candidate_2_ml_engineer"
+    ]
+  },
+  {
+    "id": "jd_2_frontend_react",
+    "title": "React Frontend Developer",
+    "company": "NexGen Web Studio",
+    "raw_text": "Seeking a talented Frontend Developer to build customer-facing web apps. You must have deep expertise in modern React, TypeScript, and responsive UI design. Required skills: React, JavaScript, TypeScript, TailwindCSS or CSS3, HTML5, Git. Preferred skills: Next.js, Redux, Recharts, Jest. Qualifications: Bachelor's in CS or equivalent practical experience. Responsibilities: create modular UI components, optimize web performance, and integrate RESTful backend APIs.",
+    "parsed": {
+      "title": "React Frontend Developer",
+      "company": "NexGen Web Studio",
+      "required_skills": ["React", "JavaScript", "TypeScript", "TailwindCSS", "Git"],
+      "preferred_skills": ["Next.js", "Redux", "Recharts", "Jest"],
+      "qualifications": ["Bachelor's in CS or equivalent"],
+      "responsibilities": [
+        "Build reusable, accessible React UI components",
+        "Implement state management with Redux or React Context",
+        "Optimize frontend bundle sizes and Core Web Vitals",
+        "Integrate RESTful endpoints seamlessly"
+      ]
+    },
+    "human_ground_truth_ranking": [
+      "candidate_3_frontend_dev",
+      "candidate_1_fullstack",
+      "candidate_5_fresher",
+      "candidate_2_ml_engineer",
+      "candidate_4_cloud_devops"
+    ]
+  },
+  {
+    "id": "jd_3_ai_ml_engineer",
+    "title": "Machine Learning Engineer",
+    "company": "Cognitive AI Systems",
+    "raw_text": "Looking for a Machine Learning Engineer to develop generative AI and NLP models. Required skills: Python, PyTorch, scikit-learn, Data Analysis, Git. Preferred skills: HuggingFace, Transformers, Docker, FastAPI, ONNX. Qualifications: B.Tech in CS/IT or AI. Responsibilities: fine-tune transformer models, preprocess large datasets, benchmark model accuracy, and build inference APIs.",
+    "parsed": {
+      "title": "Machine Learning Engineer",
+      "company": "Cognitive AI Systems",
+      "required_skills": ["Python", "PyTorch", "scikit-learn", "Data Analysis", "Git"],
+      "preferred_skills": ["HuggingFace", "Transformers", "Docker", "FastAPI"],
+      "qualifications": ["B.Tech in CS/IT or AI"],
+      "responsibilities": [
+        "Fine-tune deep learning and transformer architectures",
+        "Build high-throughput inference endpoints",
+        "Evaluate precision, recall, and F1 metrics on test sets"
+      ]
+    },
+    "human_ground_truth_ranking": [
+      "candidate_2_ml_engineer",
+      "candidate_1_fullstack",
+      "candidate_5_fresher",
+      "candidate_4_cloud_devops",
+      "candidate_3_frontend_dev"
+    ]
+  }
+]

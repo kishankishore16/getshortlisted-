@@ -1,0 +1,136 @@
+[
+  {
+    "id": "candidate_1_fullstack",
+    "name": "Aarav Sharma",
+    "summary": "Full Stack Engineer with 1 year internship experience building React and FastAPI microservices. Passionate about scalable architecture and PostgreSQL database optimization.",
+    "education": [{"degree": "B.Tech Computer Science", "institution": "IIT Delhi", "year": "2026", "gpa": "8.9"}],
+    "skills": {
+      "Languages": ["Python", "JavaScript", "TypeScript", "SQL"],
+      "Frameworks": ["FastAPI", "React", "Node.js", "Express"],
+      "Databases": ["PostgreSQL", "Redis", "MongoDB"],
+      "DevOps": ["Docker", "Git", "GitHub Actions"]
+    },
+    "experience": [
+      {
+        "title": "Backend Intern",
+        "company": "FinTech Startup",
+        "bullets": [
+          "Architected RESTful APIs using FastAPI and asyncpg, handling 15k requests/day.",
+          "Implemented Redis caching layer reducing database query response times by 42%.",
+          "Engineered JWT authentication and role-based access control for 5k active users."
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "name": "Cloud Task Hub",
+        "technologies": ["React", "FastAPI", "PostgreSQL", "Docker"],
+        "description": "Collaborative project management board with real-time WebSockets."
+      }
+    ]
+  },
+  {
+    "id": "candidate_2_ml_engineer",
+    "name": "Ananya Verma",
+    "summary": "Machine Learning enthusiast specializing in NLP, transformers, and computer vision with hands-on PyTorch and HuggingFace experience.",
+    "education": [{"degree": "B.Tech Information Technology", "institution": "NIT Trichy", "year": "2026", "gpa": "8.7"}],
+    "skills": {
+      "Languages": ["Python", "C++", "R", "SQL"],
+      "ML & AI": ["PyTorch", "TensorFlow", "scikit-learn", "HuggingFace", "OpenCV"],
+      "Data": ["Pandas", "NumPy", "Matplotlib"],
+      "Cloud": ["AWS S3", "Docker", "Git"]
+    },
+    "experience": [
+      {
+        "title": "ML Research Intern",
+        "company": "AI Labs",
+        "bullets": [
+          "Fine-tuned BERT and RoBERTa models for multilingual sentiment classification, reaching 91% F1 score.",
+          "Optimized model inference using ONNX Runtime, reducing latency by 35% on CPU instances."
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "name": "Legal Document Summarizer",
+        "technologies": ["PyTorch", "HuggingFace", "FastAPI"],
+        "description": "Extractive and abstractive summarization system using BART."
+      }
+    ]
+  },
+  {
+    "id": "candidate_3_frontend_dev",
+    "name": "Rohan Mehta",
+    "summary": "Frontend Specialist focused on crafting responsive, accessible user interfaces using React, Next.js, and modern CSS/Tailwind.",
+    "education": [{"degree": "B.Tech Computer Science", "institution": "BITS Pilani", "year": "2026", "gpa": "8.2"}],
+    "skills": {
+      "Languages": ["JavaScript", "TypeScript", "HTML5", "CSS3"],
+      "Frontend": ["React", "Next.js", "Redux Toolkit", "TailwindCSS"],
+      "Tools": ["Figma", "Git", "Webpack", "Vite", "Jest"]
+    },
+    "experience": [
+      {
+        "title": "Frontend Developer Intern",
+        "company": "EdTech Solutions",
+        "bullets": [
+          "Built 12+ reusable UI components adhering to WCAG 2.1 accessibility guidelines.",
+          "Redesigned the onboarding funnel resulting in an 18% improvement in conversion rate."
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "name": "SaaS Analytics Dashboard",
+        "technologies": ["React", "TypeScript", "TailwindCSS", "Recharts"],
+        "description": "Interactive data visualization dashboard with dark/light themes."
+      }
+    ]
+  },
+  {
+    "id": "candidate_4_cloud_devops",
+    "name": "Neha Patel",
+    "summary": "Cloud and DevOps practitioner with certified AWS skills and hands-on Kubernetes orchestration and CI/CD pipelines.",
+    "education": [{"degree": "B.Tech Computer Science", "institution": "VIT Vellore", "year": "2026", "gpa": "8.5"}],
+    "skills": {
+      "Languages": ["Python", "Go", "Bash", "YAML"],
+      "Cloud": ["AWS", "Terraform", "Docker", "Kubernetes", "Helm"],
+      "DevOps": ["GitHub Actions", "Jenkins", "Prometheus", "Grafana"]
+    },
+    "experience": [
+      {
+        "title": "DevOps Intern",
+        "company": "CloudNative Corp",
+        "bullets": [
+          "Provisioned multi-AZ AWS infrastructure using Terraform IaC modules.",
+          "Constructed GitHub Actions workflows reducing deployment cycle from 45m to 8m."
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "name": "GitOps Kubernetes Cluster",
+        "technologies": ["Kubernetes", "ArgoCD", "Helm", "Prometheus"],
+        "description": "Automated declarative cluster deployment and health monitoring."
+      }
+    ]
+  },
+  {
+    "id": "candidate_5_fresher",
+    "name": "Vikram Singh",
+    "summary": "Enthusiastic Computer Science undergraduate with strong foundation in Data Structures, Algorithms, and Core Java.",
+    "education": [{"degree": "B.Tech Computer Science", "institution": "Delhi Technical University", "year": "2026", "gpa": "7.8"}],
+    "skills": {
+      "Languages": ["Java", "C++", "SQL"],
+      "Core": ["Data Structures", "Algorithms", "OOP", "DBMS", "OS"],
+      "Tools": ["Git", "Eclipse", "MySQL"]
+    },
+    "experience": [],
+    "projects": [
+      {
+        "name": "Library Management System",
+        "technologies": ["Java", "MySQL", "JDBC"],
+        "description": "Desktop database application for managing student book borrowing."
+      }
+    ]
+  }
+]
