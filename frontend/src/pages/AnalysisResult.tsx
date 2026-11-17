@@ -100,10 +100,10 @@ export const AnalysisResult: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(`/enhance/${analysis.id}`)}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md shadow-indigo-300 transition flex items-center gap-2"
+              className="px-4 py-2 rounded-lg font-semibold text-xs text-white bg-slate-900 hover:bg-slate-800 transition flex items-center gap-2 shadow-2xs"
             >
-              <Sparkles className="w-4 h-4" />
-              Tailor Resume for This Job
+              <FileText className="w-3.5 h-3.5" />
+              Tailor Resume for Role
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -186,18 +186,18 @@ export const AnalysisResult: React.FC = () => {
         </div>
 
         {/* Bottom CTA to Enhance */}
-        <div className="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-3xl p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-lg shadow-indigo-950/20">
+        <div className="bg-slate-900 rounded-2xl p-7 text-white flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-800">
           <div className="space-y-1 text-center sm:text-left">
-            <h3 className="text-xl font-extrabold">Ready to turn this {Math.round(analysis.fit_score)}% match into an interview?</h3>
-            <p className="text-xs text-indigo-200">
-              Let the AI rewrite your professional summary, bullets, and skills specifically for {company}.
+            <h3 className="text-lg font-bold">Optimize resume bullet points for this position</h3>
+            <p className="text-xs text-slate-300">
+              Align your summary, technical competencies, and project descriptions with {company}'s exact job requirements.
             </p>
           </div>
           <button
             onClick={() => navigate(`/enhance/${analysis.id}`)}
-            className="px-6 py-3 rounded-xl font-bold text-xs bg-indigo-500 hover:bg-indigo-400 text-white shadow-md transition flex items-center gap-2 shrink-0"
+            className="px-5 py-2.5 rounded-lg font-semibold text-xs bg-white text-slate-950 hover:bg-slate-100 transition flex items-center gap-2 shrink-0"
           >
-            <Sparkles className="w-4 h-4" /> Rewrite My Resume With AI
+            <FileText className="w-3.5 h-3.5" /> Open Resume Revisor
           </button>
         </div>
       </div>

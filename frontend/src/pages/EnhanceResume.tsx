@@ -82,14 +82,14 @@ export const EnhanceResume: React.FC = () => {
           </button>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 mb-1">
-                <Sparkles className="w-3.5 h-3.5" /> AI Resume Tailor
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200 mb-1">
+                Targeted Resume Customizer
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Enhance Resume for {jobTitle}
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                Role Revisions for {jobTitle}
               </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Optimized specifically for {company} using action verbs, metrics, and targeted ATS keywords
+              <p className="text-xs text-slate-600 mt-1">
+                Calibrated for {company} using active voice, quantified outcomes, and relevant technical terminology
               </p>
             </div>
           </div>
@@ -131,17 +131,17 @@ export const EnhanceResume: React.FC = () => {
           <button
             onClick={handleEnhance}
             disabled={loading || sections.length === 0}
-            className="w-full py-3.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition shadow-md shadow-indigo-200 text-xs flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-lg font-semibold text-white bg-slate-950 hover:bg-slate-850 disabled:opacity-50 transition shadow-2xs text-xs flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Rewriting Resume Sections with Gemini AI...
+                Regenerating section revisions...
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
-                {enhanceResult ? 'Re-generate Enhancements' : 'Generate Tailored Resume'}
+                <FileText className="w-3.5 h-3.5" />
+                {enhanceResult ? 'Update Tailored Sections' : 'Generate Targeted Sections'}
               </>
             )}
           </button>

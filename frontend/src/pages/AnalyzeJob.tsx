@@ -53,12 +53,12 @@ export const AnalyzeJob: React.FC = () => {
     <PageWrapper>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Instant ATS & Role Matcher
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200 mb-2">
+            Role Compatibility Assessment
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Analyze Job Match</h1>
-          <p className="text-xs text-slate-500">
-            Paste any job description from LinkedIn, Naukri, or career portals to see how well your resume fits.
+          <h1 className="text-2xl font-bold text-slate-950 tracking-tight">Job Specification Analysis</h1>
+          <p className="text-xs text-slate-600">
+            Paste job requirements from LinkedIn, Naukri, or career portals to benchmark qualification fit and identify missing technical competencies.
           </p>
         </div>
 

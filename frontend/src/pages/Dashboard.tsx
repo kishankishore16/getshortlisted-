@@ -61,29 +61,29 @@ export const Dashboard: React.FC = () => {
     <PageWrapper>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-950/20">
-          <div className="relative z-10 space-y-3 max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
-              <Sparkles className="w-3.5 h-3.5" /> AI Job-Fit Coach
+        <div className="bg-slate-900 rounded-2xl p-7 text-white shadow-sm border border-slate-800">
+          <div className="space-y-2.5 max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+              Candidate Workspace
             </span>
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              Hey, {user?.full_name?.split(' ')[0] || 'Student'} 👋
+            <h1 className="text-2xl font-bold tracking-tight">
+              Welcome back, {user?.full_name?.split(' ')[0] || 'Candidate'}
             </h1>
-            <p className="text-sm text-indigo-100 leading-relaxed">
-              Match your resume against any job description from LinkedIn or Naukri to get an instant fit score, skill-gap analysis, and tailored rewrites.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Benchmark your qualifications against active job specifications, view compatibility breakdowns, and generate tailored resume iterations.
             </p>
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap gap-2.5 pt-2">
               <button
                 onClick={() => navigate('/analyze')}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-indigo-900 hover:bg-indigo-50 shadow-md transition flex items-center gap-2"
+                className="px-4 py-2 rounded-lg text-xs font-semibold bg-white text-slate-950 hover:bg-slate-100 transition flex items-center gap-2 shadow-2xs"
               >
-                <Search className="w-4 h-4" /> Analyze a Job Description
+                <Search className="w-3.5 h-3.5" /> Analyze Job Posting
               </button>
               <button
                 onClick={() => navigate('/resume')}
-                className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-700/60 hover:bg-indigo-700 text-white border border-indigo-500/30 transition flex items-center gap-2"
+                className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center gap-2"
               >
-                <FileText className="w-4 h-4" /> {activeResume ? 'View / Update Resume' : 'Upload Resume'}
+                <FileText className="w-3.5 h-3.5" /> {activeResume ? 'Manage Resume' : 'Upload Resume'}
               </button>
             </div>
           </div>
