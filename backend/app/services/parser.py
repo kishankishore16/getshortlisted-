@@ -135,11 +135,12 @@ RESUME TEXT:
 {text}
 """
 
+    candidate_models = [settings.GEMINI_MODEL, "gemini-3.5-flash-lite", "gemini-3.5-flash"]
+    models_to_try = list(dict.fromkeys([m for m in candidate_models if m]))
+
     for attempt in range(3):
+        chosen_model = models_to_try[attempt % len(models_to_try)]
         try:
-            # Fallback list of models in case of tier quotas
-            models_to_try = [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash"]
-            chosen_model = models_to_try[attempt % len(models_to_try)]
             model = genai.GenerativeModel(chosen_model)
             response = model.generate_content(
                 prompt,
@@ -164,8 +165,8 @@ RESUME TEXT:
             logger.error(f"Gemini returned invalid JSON for resume parsing: {e}")
             raise RuntimeError(f"Failed to parse Gemini response as JSON: {str(e)}")
         except Exception as e:
-            logger.warning(f"Gemini resume parsing attempt {attempt + 1} failed: {e}")
-            if "429" in str(e) and attempt < 2:
+            logger.warning(f"Gemini resume parsing attempt {attempt + 1} with {chosen_model} failed: {e}")
+            if ("429" in str(e) or "503" in str(e) or "404" in str(e)) and attempt < 2:
                 import asyncio
                 await asyncio.sleep(2)
                 continue

@@ -112,44 +112,54 @@ JOB DESCRIPTION TEXT:
 {jd_text}
 """
 
-    try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.1,
-            ),
-        )
+    candidate_models = [settings.GEMINI_MODEL, "gemini-3.5-flash-lite", "gemini-3.5-flash"]
+    models_to_try = list(dict.fromkeys([m for m in candidate_models if m]))
 
-        response_text = response.text.strip()
+    for attempt in range(3):
+        chosen_model = models_to_try[attempt % len(models_to_try)]
+        try:
+            model = genai.GenerativeModel(chosen_model)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                ),
+            )
 
-        # Clean up potential markdown code blocks
-        if response_text.startswith("```"):
-            lines = response_text.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
-            response_text = "\n".join(lines)
+            response_text = response.text.strip()
 
-        parsed_jd: dict = json.loads(response_text)
+            # Clean up potential markdown code blocks
+            if response_text.startswith("```"):
+                lines = response_text.split("\n")
+                lines = [l for l in lines if not l.strip().startswith("```")]
+                response_text = "\n".join(lines)
 
-        # Ensure required keys exist with defaults
-        parsed_jd.setdefault("title", "")
-        parsed_jd.setdefault("company", "")
-        parsed_jd.setdefault("required_skills", [])
-        parsed_jd.setdefault("preferred_skills", [])
-        parsed_jd.setdefault("experience_level", "")
-        parsed_jd.setdefault("min_experience_years", None)
-        parsed_jd.setdefault("max_experience_years", None)
-        parsed_jd.setdefault("responsibilities", [])
-        parsed_jd.setdefault("qualifications", [])
-        parsed_jd.setdefault("location", "")
-        parsed_jd.setdefault("job_type", "")
+            parsed_jd: dict = json.loads(response_text)
 
-        return parsed_jd
+            # Ensure required keys exist with defaults
+            parsed_jd.setdefault("title", "")
+            parsed_jd.setdefault("company", "")
+            parsed_jd.setdefault("required_skills", [])
+            parsed_jd.setdefault("preferred_skills", [])
+            parsed_jd.setdefault("experience_level", "")
+            parsed_jd.setdefault("min_experience_years", None)
+            parsed_jd.setdefault("max_experience_years", None)
+            parsed_jd.setdefault("responsibilities", [])
+            parsed_jd.setdefault("qualifications", [])
+            parsed_jd.setdefault("location", "")
+            parsed_jd.setdefault("job_type", "")
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Gemini returned invalid JSON for JD parsing: {e}")
-        raise RuntimeError(f"Failed to parse Gemini JD response as JSON: {str(e)}")
-    except Exception as e:
-        logger.error(f"Gemini JD parsing failed: {e}")
-        raise RuntimeError(f"JD parsing with Gemini failed: {str(e)}")
+            return parsed_jd
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Gemini returned invalid JSON for JD parsing: {e}")
+            raise RuntimeError(f"Failed to parse Gemini JD response as JSON: {str(e)}")
+        except Exception as e:
+            logger.warning(f"Gemini JD parsing attempt {attempt + 1} with {chosen_model} failed: {e}")
+            if ("429" in str(e) or "503" in str(e) or "404" in str(e)) and attempt < 2:
+                import asyncio
+                await asyncio.sleep(2)
+                continue
+            if attempt == 2:
+                raise RuntimeError(f"JD parsing with Gemini failed: {str(e)}")
