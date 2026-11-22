@@ -2,17 +2,14 @@
 
 import json
 import logging
+import re
 
 import fitz  # PyMuPDF
-import google.generativeai as genai
 
-from app.config import settings
 from app.schemas.resume import ParsedResume
+from app.services.gemini_client import generate_content_with_retry
 
 logger = logging.getLogger(__name__)
-
-# Configure Gemini
-genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
@@ -44,7 +41,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
         full_text = "\n".join(text_parts).strip()
         if not full_text:
-            raise ValueError("PDF contains no extractable text.")
+            raise ValueError("PDF contains no extractable text. Scanned images are not supported.")
 
         return full_text
 
@@ -63,10 +60,10 @@ async def parse_resume_with_llm(text: str) -> dict:
 
     Returns:
         A dictionary containing the parsed resume fields.
-
-    Raises:
-        RuntimeError: If Gemini fails to return valid JSON.
     """
+    # Truncate text if excessively long to prevent token overflow and latency
+    truncated_text = text[:8000]
+
     prompt = f"""You are an expert resume parser. Analyze the following resume text and extract structured information.
 
 Return a valid JSON object with EXACTLY these fields (use empty strings or empty arrays if information is not found):
@@ -92,119 +89,77 @@ Return a valid JSON object with EXACTLY these fields (use empty strings or empty
         }}
     ],
     "skills": {{
-        "Category Name": ["skill1", "skill2"]
+        "Programming Languages": ["skill1", "skill2"],
+        "Frameworks & Libraries": ["skill1"],
+        "Databases & Tools": ["skill1"]
     }},
     "experience": [
         {{
             "company": "Company name",
             "title": "Job title",
-            "location": "Job location",
+            "location": "Location",
             "start_date": "Start date",
-            "end_date": "End date or 'Present'",
-            "description": "Brief role description",
-            "bullets": ["Achievement/responsibility bullet point 1", "bullet 2"]
+            "end_date": "End date",
+            "description": "Role overview",
+            "bullets": ["Action verb bullet point with metrics"]
         }}
     ],
     "projects": [
         {{
             "name": "Project name",
-            "description": "Brief description",
+            "description": "What it does",
             "technologies": ["tech1", "tech2"],
-            "url": "Project URL if any",
-            "bullets": ["Key detail 1", "Key detail 2"]
+            "url": "Project link if any",
+            "bullets": ["Technical achievement"]
         }}
     ],
     "certifications": [
         {{
             "name": "Certification name",
             "issuer": "Issuing organization",
-            "date": "Date obtained",
-            "url": "Certificate URL if any"
+            "date": "Issue date",
+            "url": "Credential URL if any"
         }}
     ]
 }}
 
-IMPORTANT RULES:
-1. Extract skills and group them into logical categories (e.g., "Programming Languages", "Frameworks", "Databases", "Tools", "Soft Skills").
-2. For experience bullets, preserve the original wording as much as possible.
-3. If a section is not present in the resume, use empty arrays/strings.
-4. Return ONLY the JSON object, no markdown formatting, no code blocks, no extra text.
-5. Ensure all JSON is valid and properly escaped.
+CRITICAL INSTRUCTIONS:
+1. Extract ALL skills listed and group them logically.
+2. Return ONLY the raw JSON object. Do not include markdown codeblocks, explanation, or notes.
 
 RESUME TEXT:
-{text}
+{truncated_text}
 """
 
-    candidate_models = [settings.GEMINI_MODEL, "gemini-3.5-flash-lite", "gemini-3.5-flash"]
-    models_to_try = list(dict.fromkeys([m for m in candidate_models if m]))
+    raw_response = await generate_content_with_retry(
+        prompt=prompt,
+        generation_config={"response_mime_type": "application/json", "temperature": 0.1},
+        max_retries=3,
+    )
 
-    for attempt in range(3):
-        chosen_model = models_to_try[attempt % len(models_to_try)]
-        try:
-            model = genai.GenerativeModel(chosen_model)
-            response = model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    temperature=0.1,
-                ),
-            )
+    cleaned = re.sub(r"^```(?:json)?\s*", "", raw_response.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
 
-            response_text = response.text.strip()
-
-            # Clean up potential markdown code blocks
-            if response_text.startswith("```"):
-                lines = response_text.split("\n")
-                lines = [l for l in lines if not l.strip().startswith("```")]
-                response_text = "\n".join(lines)
-
-            parsed_data: dict = json.loads(response_text)
+    try:
+        parsed_data = json.loads(cleaned)
+        if isinstance(parsed_data, dict):
             return parsed_data
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Gemini returned invalid JSON for resume parsing: {e}")
-            raise RuntimeError(f"Failed to parse Gemini response as JSON: {str(e)}")
-        except Exception as e:
-            logger.warning(f"Gemini resume parsing attempt {attempt + 1} with {chosen_model} failed: {e}")
-            if ("429" in str(e) or "503" in str(e) or "404" in str(e)) and attempt < 2:
-                import asyncio
-                await asyncio.sleep(2)
-                continue
-            if attempt == 2:
-                raise RuntimeError(f"Resume parsing with Gemini failed: {str(e)}")
+        raise ValueError("Response was not a JSON object")
+    except Exception as e:
+        logger.error(f"Failed to parse Gemini response as JSON: {e}. Raw response: {raw_response[:300]}")
+        raise RuntimeError(f"AI response format error: {str(e)}")
 
 
 async def parse_resume(file_bytes: bytes) -> ParsedResume:
-    """Full resume parsing pipeline: PDF extraction → LLM structuring.
-
-    Orchestrates the complete resume parsing process by first extracting
-    text from the PDF, then sending it to Gemini for structured parsing,
-    and finally validating the result against the ParsedResume schema.
-
-    Args:
-        file_bytes: Raw bytes of the uploaded PDF resume file.
-
-    Returns:
-        A validated ParsedResume Pydantic model instance.
-
-    Raises:
-        ValueError: If the PDF is invalid or empty.
-        RuntimeError: If the LLM parsing fails.
-    """
-    # Step 1: Extract text from PDF
+    """Full resume parsing pipeline: PDF extraction -> LLM structuring."""
     raw_text = extract_text_from_pdf(file_bytes)
-    logger.info(f"Extracted {len(raw_text)} characters from resume PDF.")
-
-    # Step 2: Parse with LLM
     parsed_dict = await parse_resume_with_llm(raw_text)
 
-    # Step 3: Validate against schema (Pydantic will fill defaults for missing fields)
     try:
-        parsed_resume = ParsedResume.model_validate(parsed_dict)
+        return ParsedResume.model_validate(parsed_dict)
     except Exception as e:
-        logger.warning(f"Pydantic validation had issues, using raw dict: {e}")
-        # Attempt graceful fallback — construct with what we have
-        parsed_resume = ParsedResume(
+        logger.warning(f"Pydantic validation fallback: {e}")
+        return ParsedResume(
             name=parsed_dict.get("name", ""),
             email=parsed_dict.get("email", ""),
             phone=parsed_dict.get("phone", ""),
@@ -214,6 +169,8 @@ async def parse_resume(file_bytes: bytes) -> ParsedResume:
             portfolio=parsed_dict.get("portfolio", ""),
             summary=parsed_dict.get("summary", ""),
             skills=parsed_dict.get("skills", {}),
+            education=parsed_dict.get("education", []),
+            experience=parsed_dict.get("experience", []),
+            projects=parsed_dict.get("projects", []),
+            certifications=parsed_dict.get("certifications", []),
         )
-
-    return parsed_resume

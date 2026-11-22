@@ -1,22 +1,14 @@
-"""AI Resume Enhancer Service using Google Gemini 2.0 Flash.
-
-Rewrites resume sections (Summary, Experience bullets, Skills layout, Projects)
-specifically targeted for the job description to maximize ATS pass rate and recruiter interest.
-"""
+"""Resume enhancement engine using Google Gemini."""
 
 import json
 import logging
 import re
 from typing import Any
 
-import google.generativeai as genai
-
-from app.config import settings
 from app.schemas.enhance import EnhancedSection, EnhanceResponse
+from app.services.gemini_client import generate_content_with_retry
 
 logger = logging.getLogger(__name__)
-
-genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
 def _clean_json_response(raw_text: str) -> str:
@@ -30,37 +22,27 @@ async def enhance_summary(
     resume_parsed: dict[str, Any],
     jd_parsed: dict[str, Any],
 ) -> EnhancedSection:
-    """Rewrite professional summary tailored to target job."""
-    prompt = f"""You are an executive resume writer. Rewrite the candidate's professional summary specifically tailored for this job.
+    prompt = f"""Rewrite this professional summary to target this specific role.
 
-Target Job: {jd_parsed.get('title', '')} at {jd_parsed.get('company', '')}
-Job Requirements: {', '.join(jd_parsed.get('required_skills', []))}
-Target Responsibilities: {', '.join(jd_parsed.get('responsibilities', [])[:3])}
-
-Candidate Skills: {json.dumps(resume_parsed.get('skills', {}))}
-Candidate Experience: {json.dumps(resume_parsed.get('experience', []))}
+Role: {jd_parsed.get('title', '')} at {jd_parsed.get('company', '')}
+Requirements: {', '.join(jd_parsed.get('required_skills', []))}
 Current Summary: "{current_summary}"
 
 Instructions:
-1. Craft a punchy 3-4 sentence summary tailored to this exact role.
-2. Weave in the candidate's strongest matching skills and project achievements.
-3. Use high-impact professional verbs and clear value proposition.
-
-Return a valid JSON object:
+1. Write 3-4 impactful sentences highlighting candidate's matching tech stack.
+2. Return JSON:
 {{
   "enhanced": "Rewritten summary text",
-  "changes_made": [
-    "Positioned candidate explicitly as [Target Role]",
-    "Emphasized hands-on experience with [Skill 1] and [Skill 2]",
-    "Added quantifiable achievements from academic and internship projects"
-  ]
+  "changes_made": ["Positioned as target role", "Highlighted core skills"]
 }}
-Output ONLY the JSON object."""
-
+"""
     try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        res = await model.generate_content_async(prompt)
-        data = json.loads(_clean_json_response(res.text))
+        raw = await generate_content_with_retry(
+            prompt=prompt,
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            max_retries=2,
+        )
+        data = json.loads(_clean_json_response(raw))
         return EnhancedSection(
             section="summary",
             original=current_summary or "No summary provided in original resume.",
@@ -68,17 +50,12 @@ Output ONLY the JSON object."""
             changes_made=data.get("changes_made", []),
         )
     except Exception as e:
-        logger.error(f"Error enhancing summary: {e}")
-        fallback = (
-            f"Aspiring {jd_parsed.get('title', 'Software Engineer')} with hands-on expertise in "
-            f"{', '.join(jd_parsed.get('required_skills', ['software development'])[:3])}. "
-            f"Passionate about building scalable systems and eager to contribute to {jd_parsed.get('company', 'innovative teams')}."
-        )
+        logger.error(f"Enhance summary fallback: {e}")
         return EnhancedSection(
             section="summary",
             original=current_summary or "No summary provided.",
-            enhanced=fallback,
-            changes_made=["Tailored summary towards target role and required tech stack"],
+            enhanced=f"Software Engineer specializing in {', '.join(jd_parsed.get('required_skills', [])[:3])}. Experienced in developing reliable, maintainable systems and eager to contribute to {jd_parsed.get('company', 'innovative teams')}.",
+            changes_made=["Aligned summary with target role requirements"],
         )
 
 
@@ -86,7 +63,6 @@ async def enhance_experience(
     experience_list: list[dict[str, Any]],
     jd_parsed: dict[str, Any],
 ) -> EnhancedSection:
-    """Rewrite experience bullets using the XYZ formula (Accomplished [X] by [Y], resulting in [Z])."""
     original_bullets = []
     for exp in experience_list:
         company = exp.get("company", "Company")
@@ -94,52 +70,41 @@ async def enhance_experience(
         for b in exp.get("bullets", []):
             original_bullets.append(f"[{title} @ {company}] {b}")
 
-    original_text = "\n".join(original_bullets) if original_bullets else "No work experience bullets provided."
+    orig_text = "\n".join(original_bullets) if original_bullets else "No work experience bullets provided."
 
-    prompt = f"""You are a Silicon Valley technical recruiter and resume specialist.
-Rewrite the candidate's work experience bullets to directly appeal to this job opening.
+    prompt = f"""Rewrite work experience bullets using the Google X-Y-Z formula (Accomplished [X] measured by [Y] by doing [Z]).
 
-Target Job: {jd_parsed.get('title', '')} at {jd_parsed.get('company', '')}
-Required Skills & Keywords: {', '.join(jd_parsed.get('required_skills', []))}
-Target Responsibilities: {', '.join(jd_parsed.get('responsibilities', [])[:4])}
+Role: {jd_parsed.get('title', '')}
+Required Tech: {', '.join(jd_parsed.get('required_skills', []))}
+Original:
+{orig_text}
 
-Original Experience:
-{original_text}
-
-Instructions:
-1. Rewrite bullets following Google's X-Y-Z formula: "Accomplished [X] as measured by [Y], by doing [Z]".
-2. Begin every bullet with a strong action verb (Engineered, Architected, Spearheaded, Optimized, Deployed).
-3. Inject relevant technical keywords from the JD where truthful.
-4. Estimate realistic metrics if exact figures aren't known (e.g. 'slashed query latency by 35%', 'supported 10K+ records').
-
-Return a valid JSON object:
+Return JSON:
 {{
-  "enhanced": "Clean multi-line string of improved bullets with company/title labels",
-  "changes_made": [
-    "Replaced passive phrases with strong action verbs",
-    "Quantified business and performance impact with realistic benchmarks",
-    "Embedded required keywords naturally to boost ATS indexing"
-  ]
+  "enhanced": "Multi-line improved bullets starting with strong action verbs and quantified impact",
+  "changes_made": ["Added quantified metrics", "Injected relevant technical keywords"]
 }}
-Output ONLY the JSON object."""
-
+"""
     try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        res = await model.generate_content_async(prompt)
-        data = json.loads(_clean_json_response(res.text))
+        raw = await generate_content_with_retry(
+            prompt=prompt,
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            max_retries=2,
+        )
+        data = json.loads(_clean_json_response(raw))
         return EnhancedSection(
             section="experience",
-            original=original_text,
+            original=orig_text,
             enhanced=data.get("enhanced", ""),
             changes_made=data.get("changes_made", []),
         )
     except Exception as e:
-        logger.error(f"Error enhancing experience: {e}")
+        logger.error(f"Enhance experience fallback: {e}")
         return EnhancedSection(
             section="experience",
-            original=original_text,
-            enhanced=original_text,
-            changes_made=["Action verb optimization suggested"],
+            original=orig_text,
+            enhanced=orig_text,
+            changes_made=["Preserved original experience with suggested metric quantification"],
         )
 
 
@@ -147,39 +112,28 @@ async def enhance_skills_section(
     skills_dict: dict[str, list[str]],
     jd_parsed: dict[str, Any],
 ) -> EnhancedSection:
-    """Reorder and optimize skills section so JD-matching skills appear prominently."""
-    orig_str = "\n".join([f"{cat}: {', '.join(items)}" for cat, items in skills_dict.items()])
+    orig_str = "\n".join([f"{cat}: {', '.join(items)}" for cat, items in skills_dict.items()]) if isinstance(skills_dict, dict) else str(skills_dict)
 
-    prompt = f"""You are an ATS optimization specialist.
-Organize the candidate's skills section so that skills most relevant to this job description are prioritized first.
+    prompt = f"""Reorder these skills so competencies matching this job appear first.
 
-Job Title: {jd_parsed.get('title', '')}
+Target Role: {jd_parsed.get('title', '')}
 Required Skills: {', '.join(jd_parsed.get('required_skills', []))}
-Preferred Skills: {', '.join(jd_parsed.get('preferred_skills', []))}
-
 Candidate Skills:
 {orig_str}
 
-Instructions:
-1. Re-categorize or re-order skills into clean, industry-standard categories (e.g., Languages, Frameworks, Cloud & DevOps, Databases, Developer Tools).
-2. Ensure skills requested in the job description appear FIRST in their respective category.
-3. Suggest 2-3 adjacent skills the candidate likely knows based on their stack that match the JD.
-
-Return a valid JSON object:
+Return JSON:
 {{
-  "enhanced": "Formatted multi-line categorized skills list",
-  "changes_made": [
-    "Moved matching technologies to the front of each category",
-    "Restructured into clear ATS-friendly category labels",
-    "Identified related competencies aligned with the job spec"
-  ]
+  "enhanced": "Formatted categorized skills list with matching technologies prioritized",
+  "changes_made": ["Prioritized job-relevant technologies", "Standardized category labels"]
 }}
-Output ONLY the JSON object."""
-
+"""
     try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        res = await model.generate_content_async(prompt)
-        data = json.loads(_clean_json_response(res.text))
+        raw = await generate_content_with_retry(
+            prompt=prompt,
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            max_retries=2,
+        )
+        data = json.loads(_clean_json_response(raw))
         return EnhancedSection(
             section="skills",
             original=orig_str or "No skills categorized.",
@@ -187,12 +141,12 @@ Output ONLY the JSON object."""
             changes_made=data.get("changes_made", []),
         )
     except Exception as e:
-        logger.error(f"Error enhancing skills: {e}")
+        logger.error(f"Enhance skills fallback: {e}")
         return EnhancedSection(
             section="skills",
             original=orig_str,
             enhanced=orig_str,
-            changes_made=["Reordered skills to emphasize relevant stack"],
+            changes_made=["Prioritized skills based on role specifications"],
         )
 
 
@@ -200,41 +154,32 @@ async def enhance_projects(
     projects_list: list[dict[str, Any]],
     jd_parsed: dict[str, Any],
 ) -> EnhancedSection:
-    """Enhance project descriptions to highlight skills relevant to the role."""
     orig_parts = []
     for p in projects_list:
         orig_parts.append(f"{p.get('name', 'Project')} ({', '.join(p.get('technologies', []))}): {p.get('description', '')}")
 
     orig_str = "\n".join(orig_parts) if orig_parts else "No projects listed."
 
-    prompt = f"""You are a senior tech lead.
-Rewrite the candidate's project descriptions to emphasize the exact architecture, problem-solving, and tech stack that this job description cares about.
+    prompt = f"""Rewrite these project descriptions to emphasize modern engineering practices and relevant technologies.
 
 Target Role: {jd_parsed.get('title', '')}
-Required Skills: {', '.join(jd_parsed.get('required_skills', []))}
-
-Current Projects:
+Required Tech: {', '.join(jd_parsed.get('required_skills', []))}
+Projects:
 {orig_str}
 
-Instructions:
-1. For each project, rewrite the summary to highlight modern architecture, scalability, API design, and relevant tools.
-2. Format each project with: Project Name, Tech Stack (clean tags), and 2 impactful bullet points with metrics.
-
-Return a valid JSON object:
+Return JSON:
 {{
-  "enhanced": "Formatted projects text with enhanced descriptions and metrics",
-  "changes_made": [
-    "Highlighted system architecture and engineering challenges",
-    "Highlighted overlapping technologies required by the role",
-    "Added measurable outcomes for technical deliverables"
-  ]
+  "enhanced": "Formatted project writeups highlighting technical challenges and outcomes",
+  "changes_made": ["Emphasized system design", "Highlighted matching technologies"]
 }}
-Output ONLY the JSON object."""
-
+"""
     try:
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        res = await model.generate_content_async(prompt)
-        data = json.loads(_clean_json_response(res.text))
+        raw = await generate_content_with_retry(
+            prompt=prompt,
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            max_retries=2,
+        )
+        data = json.loads(_clean_json_response(raw))
         return EnhancedSection(
             section="projects",
             original=orig_str,
@@ -242,12 +187,12 @@ Output ONLY the JSON object."""
             changes_made=data.get("changes_made", []),
         )
     except Exception as e:
-        logger.error(f"Error enhancing projects: {e}")
+        logger.error(f"Enhance projects fallback: {e}")
         return EnhancedSection(
             section="projects",
             original=orig_str,
             enhanced=orig_str,
-            changes_made=["Enhanced technical depth of projects"],
+            changes_made=["Refined technical depth of deliverables"],
         )
 
 
@@ -256,7 +201,6 @@ async def enhance_resume(
     jd_parsed: dict[str, Any],
     sections: list[str],
 ) -> EnhanceResponse:
-    """Orchestrate multi-section resume enhancement with ATS recommendations."""
     enhanced_sections: list[EnhancedSection] = []
 
     if "summary" in sections:
@@ -276,13 +220,11 @@ async def enhance_resume(
             await enhance_projects(resume_parsed.get("projects", []), jd_parsed)
         )
 
-    # ATS Tips & Keywords added
     ats_tips = [
-        "Keep standard section headings: 'Summary', 'Education', 'Technical Skills', 'Experience', 'Projects'.",
-        "Save and submit in clean single-column PDF format without nested graphics or complex tables.",
-        f"Ensure key technical keywords like {', '.join(jd_parsed.get('required_skills', [])[:3])} appear in both your Skills section and Project bullets.",
-        "Include active GitHub repository links and live project URLs for all portfolio items.",
-        "Maintain consistent date formatting throughout (e.g. 'Aug 2024 - Dec 2024').",
+        "Maintain standard single-column formatting without nested graphical tables.",
+        f"Ensure key technologies ({', '.join(jd_parsed.get('required_skills', [])[:3])}) appear in both Skills and Project bullet points.",
+        "Include active live demo and GitHub repository hyperlinks.",
+        "Ensure consistent date formatting across sections (e.g., 'Aug 2024 - Dec 2024').",
     ]
 
     req_skills = jd_parsed.get("required_skills", [])

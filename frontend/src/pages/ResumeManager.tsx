@@ -40,8 +40,18 @@ export const ResumeManager: React.FC = () => {
       const allRes = await resumeApi.getResumes();
       setResumes(allRes.data);
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Failed to upload and parse resume.');
-      throw err;
+      console.error('Upload failed:', err);
+      const detail = err?.response?.data?.detail;
+      let msg = 'Failed to upload and parse resume.';
+      if (typeof detail === 'string') {
+        msg = detail;
+      } else if (Array.isArray(detail)) {
+        msg = detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      toast.error(msg);
+      throw new Error(msg);
     } finally {
       setIsUploading(false);
     }

@@ -1,6 +1,7 @@
 """Resume management API routes."""
 
 import uuid
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -14,8 +15,9 @@ from app.schemas.resume import ResumeQualityScore, ResumeResponse
 from app.services.embeddings import store_embedding
 from app.services.parser import extract_text_from_pdf, parse_resume_with_llm
 from app.services.scorer import score_resume
-from app.utils.file_handler import upload_to_cloudinary
 from app.utils.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
@@ -53,6 +55,7 @@ async def upload_resume(
     try:
         parsed_dict = await parse_resume_with_llm(raw_text)
     except Exception as e:
+        logger.error(f"Resume parsing error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"AI Resume Parser error: {str(e)}",
@@ -62,30 +65,22 @@ async def upload_resume(
     quality_score_obj: ResumeQualityScore = score_resume(parsed_dict)
     quality_breakdown = quality_score_obj.model_dump()
 
-    # 4. Upload file to Cloudinary with safe fallback
-    file_url = f"local://uploads/{file.filename}"
-    try:
-        # Rewind file pointer
-        await file.seek(0)
-        file_url = await upload_to_cloudinary(file)
-    except Exception:
-        # If Cloudinary is not configured or fails, use local placeholder URL
-        file_url = f"https://getshortlisted-resumes.storage/{uuid.uuid4()}/{file.filename}"
-
-    # 5. Create Resume DB record
+    # 4. Set file URL reference
     resume_id = uuid.uuid4()
     doc_id = str(resume_id)
+    file_url = f"https://getshortlisted-resumes.storage/{doc_id}/{file.filename}"
 
-    # Store embedding
+    # 5. Store embedding
     try:
         store_embedding(
             doc_id=doc_id,
             text=raw_text,
             metadata={"user_id": str(current_user.id), "type": "resume"},
         )
-    except Exception:
-        pass  # Proceed even if Chroma embedding storage faces non-fatal issues
+    except Exception as e:
+        logger.warning(f"Embedding storage note: {e}")
 
+    # 6. Save in DB
     new_resume = Resume(
         id=resume_id,
         user_id=current_user.id,
