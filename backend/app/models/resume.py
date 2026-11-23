@@ -45,10 +45,10 @@ class Resume(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "User", back_populates="resumes", lazy="selectin"
+        "User", back_populates="resumes"
     )
     analyses: Mapped[list["Analysis"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "Analysis", back_populates="resume", lazy="selectin"
+        "Analysis", back_populates="resume"
     )
 
     def __repr__(self) -> str:

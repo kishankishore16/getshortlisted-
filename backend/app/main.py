@@ -1,5 +1,6 @@
 """FastAPI Main Application Entry Point."""
 
+import asyncio
 from contextlib import asynccontextmanager
 import logging
 
@@ -21,15 +22,7 @@ logger = logging.getLogger("getshortlisted")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan context for startup and shutdown routines."""
-    logger.info("Initializing GetShortlisted API backend...")
-    # Auto-create tables in development / Neon if not present
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database schema verified and initialized.")
-    except Exception as e:
-        logger.warning(f"Database connection note (will retry per request): {e}")
-
+    logger.info("GetShortlisted API backend online.")
     yield
     logger.info("Shutting down GetShortlisted backend...")
 

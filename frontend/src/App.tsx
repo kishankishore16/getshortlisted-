@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { pingServer } from '@/services/api';
 
 // Pages
 import { Landing } from '@/pages/Landing';
@@ -37,6 +38,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 };
 
 export const App: React.FC = () => {
+  useEffect(() => {
+    // Proactively ping server on load to mitigate free-tier container cold-start delay
+    pingServer();
+  }, []);
+
   return (
     <>
       <Toaster

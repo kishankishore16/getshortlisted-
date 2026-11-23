@@ -49,7 +49,7 @@ class Analysis(Base):
 
     # Relationships
     resume: Mapped["Resume"] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "Resume", back_populates="analyses", lazy="selectin"
+        "Resume", back_populates="analyses"
     )
 
     def __repr__(self) -> str:

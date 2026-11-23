@@ -38,7 +38,7 @@ class User(Base):
 
     # Relationships
     resumes: Mapped[list["Resume"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "Resume", back_populates="user", lazy="selectin"
+        "Resume", back_populates="user"
     )
 
     def __repr__(self) -> str:

@@ -1,5 +1,6 @@
 """Authentication API routes."""
 
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,10 +27,14 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
             detail="An account with this email address already exists.",
         )
 
+    # Hash password in threadpool to prevent blocking the async loop
+    loop = asyncio.get_event_loop()
+    pwd_hash = await loop.run_in_executor(None, hash_password, payload.password)
+
     # Create user
     user = User(
         email=payload.email.lower().strip(),
-        password_hash=hash_password(payload.password),
+        password_hash=pwd_hash,
         full_name=payload.full_name.strip(),
     )
     db.add(user)
@@ -51,7 +56,18 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(payload.password, user.password_hash):
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify password in threadpool to avoid blocking event loop
+    loop = asyncio.get_event_loop()
+    is_valid = await loop.run_in_executor(None, verify_password, payload.password, user.password_hash)
+
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",

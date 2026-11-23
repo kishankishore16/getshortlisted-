@@ -64,11 +64,11 @@ def score_impact_language(parsed: dict[str, Any]) -> float:
 
     # Count action verbs
     verb_matches = sum(1 for w in words if w in ACTION_VERBS)
-    verb_score = min(50.0, (verb_matches / 6.0) * 50.0)
+    verb_score = min(50.0, 10.0 + (verb_matches / 4.0) * 40.0) if verb_matches else 0.0
 
     # Count numbers / percentages / metrics
     numbers = re.findall(r"\b\d+(?:[\.,]\d+)?%?|\b\d+k\b|\b\d+x\b", combined)
-    metric_score = min(50.0, (len(numbers) / 4.0) * 50.0)
+    metric_score = min(50.0, 10.0 + (len(numbers) / 3.0) * 40.0) if numbers else 0.0
 
     return round(verb_score + metric_score, 1)
 

@@ -1,23 +1,26 @@
 """File handling utilities for Cloudinary upload."""
 
-import cloudinary
-import cloudinary.uploader
+try:
+    import cloudinary
+    import cloudinary.uploader
+except ImportError:
+    cloudinary = None  # type: ignore
+
 from fastapi import HTTPException, UploadFile, status
 
 from app.config import settings
 
 
 def _configure_cloudinary() -> None:
-    """Configure the Cloudinary SDK from the CLOUDINARY_URL setting.
-
-    The CLOUDINARY_URL has the format:
-        cloudinary://api_key:api_secret@cloud_name
-    Cloudinary's SDK can parse this automatically.
-    """
-    cloudinary.config(
-        cloudinary_url=settings.CLOUDINARY_URL,
-        secure=True,
-    )
+    """Configure the Cloudinary SDK from the CLOUDINARY_URL setting."""
+    if cloudinary is not None and settings.CLOUDINARY_URL:
+        try:
+            cloudinary.config(
+                cloudinary_url=settings.CLOUDINARY_URL,
+                secure=True,
+            )
+        except Exception:
+            pass
 
 
 # Configure on module import

@@ -13,7 +13,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
@@ -68,7 +68,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isAuthenticated: false, isLoading: false });
       return;
     }
-    set({ isLoading: true });
+    if (!get().user) {
+      set({ isLoading: true });
+    }
     try {
       const response = await authApi.getMe();
       set({ user: response.data, isAuthenticated: true, isLoading: false });

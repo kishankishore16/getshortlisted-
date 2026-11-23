@@ -185,6 +185,8 @@ export interface EnhanceResult {
   keywords_added: string[];
 }
 
+export const pingServer = () => api.get('/health').catch(() => {});
+
 // ---- API Functions ----
 
 export const authApi = {
