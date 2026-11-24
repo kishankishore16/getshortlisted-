@@ -4,7 +4,10 @@ import json
 import logging
 import re
 
-import pymupdf as fitz
+try:
+    import fitz  # PyMuPDF module
+except ImportError:
+    import pymupdf as fitz  # Newer PyMuPDF alias
 
 from app.schemas.resume import ParsedResume
 from app.services.gemini_client import generate_content_with_retry
