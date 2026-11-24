@@ -41,7 +41,11 @@ Write a 3-4 sentence professional evaluation addressing the candidate directly (
 Highlight matching capabilities and technical synergy with the job requirements. Output plain text without markdown."""
 
     try:
-        text = await generate_content_with_retry(prompt=prompt, max_retries=2)
+        text = await generate_content_with_retry(
+            prompt=prompt,
+            generation_config={"max_output_tokens": 250, "temperature": 0.3},
+            max_retries=2,
+        )
         return text if text else "Your technical foundation demonstrates strong alignment with the role's core requirements."
     except Exception as e:
         logger.error(f"Fit explanation fallback: {e}")
@@ -87,7 +91,7 @@ Return ONLY the raw JSON array."""
     try:
         raw_res = await generate_content_with_retry(
             prompt=prompt,
-            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2, "max_output_tokens": 600},
             max_retries=2,
         )
         cleaned = _clean_json_response(raw_res)
@@ -152,7 +156,7 @@ Return ONLY the raw JSON object."""
     try:
         raw_res = await generate_content_with_retry(
             prompt=prompt,
-            generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+            generation_config={"response_mime_type": "application/json", "temperature": 0.2, "max_output_tokens": 600},
             max_retries=2,
         )
         cleaned = _clean_json_response(raw_res)

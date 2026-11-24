@@ -57,7 +57,7 @@ JOB DESCRIPTION:
 
     raw_response = await generate_content_with_retry(
         prompt=prompt,
-        generation_config={"response_mime_type": "application/json", "temperature": 0.1},
+        generation_config={"response_mime_type": "application/json", "temperature": 0.1, "max_output_tokens": 1024},
         max_retries=3,
     )
 
